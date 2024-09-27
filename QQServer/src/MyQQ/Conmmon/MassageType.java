@@ -9,4 +9,5 @@ public interface MassageType {
     String MASSAGE_CLIENT_EXIT = "6";
     String MASSAGE_TO_ALL="7";
     String MASSAGE_FEIL_MES="8";
+    String MASSAGE_OFFLINE_MES = "9";
 }

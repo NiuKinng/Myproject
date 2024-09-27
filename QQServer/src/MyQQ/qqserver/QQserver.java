@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 public class QQserver {
     private ServerSocket serverSocket = null;
@@ -44,12 +45,22 @@ public class QQserver {
                 Socket socket = serverSocket.accept();
                 ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
                 ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-
                 User u = (User) ois.readObject();
                 Massage massage = new Massage();
-
                 if (checkUser(u.getUsername(),u.getPassword())) {
+
                     massage.setMassageType(MassageType.MASSAGE_LOGIN_SUCCESS);
+
+                    HashMap<String, LinkedList<String>> newhm = ManageClientThreads.getNewhm();
+
+                    if (newhm.containsKey(u.getUsername())) {
+                        String contents="";
+                        for(int i=0;i<newhm.get(u.getUsername()).size();i++){
+                            contents+=newhm.get(u.getUsername()).get(i)+"\n";
+                        }
+                        ManageClientThreads.setNewhm(newhm);
+                        massage.setContent(contents);
+                    }
                     oos.writeObject(massage);
                     ServerConnectClientThread serverConnectClientThread = new ServerConnectClientThread(socket, u.getUsername());
                     serverConnectClientThread.start();

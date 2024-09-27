@@ -9,6 +9,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class ServerConnectClientThread extends Thread {
@@ -40,26 +41,41 @@ public class ServerConnectClientThread extends Thread {
                     massage1.setContent(Olineusers);
                     massage1.setReceiver(massage.getSender());
                     oos.writeObject(massage1);
-                } else if(massage.getMassageType().equals(MassageType.MASSAGE_CLIENT_EXIT)){
-                    System.out.println(massage.getSender()+"退出系统。");
+                } else if (massage.getMassageType().equals(MassageType.MASSAGE_CLIENT_EXIT)) {
+                    System.out.println(massage.getSender() + "退出系统。");
                     ManageClientThreads.removeClientThreads(massage.getSender());
                     socket.close();
                     break;
-                }else if (massage.getMassageType().equals(MassageType.MASSAGE_COMM_MES)){
-                    ServerConnectClientThread t = ManageClientThreads.getClientThread(massage.getReceiver());
-                    try {
-                        ObjectOutputStream oos1 = new ObjectOutputStream(t.socket.getOutputStream());
-                        oos1.writeObject(massage);
-
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                } else if (massage.getMassageType().equals(MassageType.MASSAGE_COMM_MES)) {
+                    HashMap<String, ServerConnectClientThread> hm = ManageClientThreads.getHm();
+                    Set<String> set = hm.keySet();
+                    if (set.contains(massage.getReceiver())) {
+                        try {
+                            ObjectOutputStream oos1 = new ObjectOutputStream(ManageClientThreads.getClientThread(massage.getReceiver()).socket.getOutputStream());
+                            oos1.writeObject(massage);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        HashMap<String, LinkedList<String>> newhm = ManageClientThreads.getNewhm();
+                        if (newhm.containsKey(massage.getReceiver())) {
+                            newhm.get(massage.getReceiver()).add(massage.getSender()+"对你说："+massage.getContent());
+                        } else {
+                            LinkedList<String> list = new LinkedList<>();
+                            list.add(massage.getSender()+"对你说："+massage.getContent());
+                            newhm.put(massage.getReceiver(), list);
+                        }
+//                        LinkedList<String> strings = new LinkedList<>();
+//                        strings.add("我想吃鱼了");
+//                        newhm.put("200",strings);
+                        ManageClientThreads.setNewhm(newhm);
                     }
 
-                }else if(massage.getMassageType().equals(MassageType.MASSAGE_TO_ALL)){
+                } else if (massage.getMassageType().equals(MassageType.MASSAGE_TO_ALL)) {
                     HashMap<String, ServerConnectClientThread> hm = ManageClientThreads.getHm();
                     Set<String> usernames = hm.keySet();
-                    for (String s :usernames) {
-                        if(s!=username){
+                    for (String s : usernames) {
+                        if (s != username) {
                             ObjectOutputStream oos1 = new ObjectOutputStream(ManageClientThreads.getClientThread(s).socket.getOutputStream());
                             oos1.writeObject(massage);
                         }
@@ -67,7 +83,7 @@ public class ServerConnectClientThread extends Thread {
                     }
 
 
-                }else if(massage.getMassageType().equals(MassageType.MASSAGE_FEIL_MES)){
+                } else if (massage.getMassageType().equals(MassageType.MASSAGE_FEIL_MES)) {
                     ObjectOutputStream oos1 = new ObjectOutputStream(ManageClientThreads.getClientThread(massage.getReceiver()).socket.getOutputStream());
                     oos1.writeObject(massage);
 
